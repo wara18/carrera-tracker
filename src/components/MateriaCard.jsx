@@ -4,7 +4,6 @@ import { ESTADOS } from '../utils/materias'
 const puedeUsarParaCursar = (m) => m && (m.estado === 'cursada' || m.estado === 'aprobada')
 const puedeUsarParaRendir = (m) => m && m.estado === 'aprobada'
 
-// Normaliza correlativas: acepta array, número suelto (Sheets), string "1,2,3" o vacío
 const toArray = (val) => {
   if (val === null || val === undefined || val === '') return []
   if (Array.isArray(val)) return val.map(Number).filter(Boolean)
@@ -23,7 +22,17 @@ function CorrelativaTag({ id, allMaterias, tipo }) {
   )
 }
 
-export default function MateriaCard({ materia, onUpdate, allMaterias }) {
+export default function MateriaCard({
+  materia,
+  onUpdate,
+  allMaterias,
+  style,
+  isHovered,
+  isPrereq,
+  isDependent,
+  isDimmed,
+  onHover,
+}) {
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
     estado: materia.estado || 'falta_cursar',
@@ -33,7 +42,6 @@ export default function MateriaCard({ materia, onUpdate, allMaterias }) {
 
   const estado = ESTADOS[form.estado] || ESTADOS.falta_cursar
 
-  // Normalizar siempre a array (datos pueden venir como string desde Sheets)
   const corrCursar = toArray(materia.correlativas_cursar)
   const corrRendir = toArray(materia.correlativas_rendir)
 
@@ -60,11 +68,27 @@ export default function MateriaCard({ materia, onUpdate, allMaterias }) {
     setEditing(false)
   }
 
+  // Build highlight class
+  let highlightClass = ''
+  if (isHovered) highlightClass = 'tree-hovered'
+  else if (isPrereq) highlightClass = 'tree-prereq'
+  else if (isDependent) highlightClass = 'tree-dependent'
+  else if (isDimmed) highlightClass = 'tree-dimmed'
+
   return (
-    <div className={`materia-card ${editing ? 'editing' : ''}`} style={{ '--estado-color': estado.color, '--estado-bg': estado.bg }}>
+    <div
+      className={`materia-card ${editing ? 'editing' : ''} ${highlightClass}`}
+      style={{ '--estado-color': estado.color, '--estado-bg': estado.bg, ...style }}
+      onMouseEnter={() => onHover(materia.id)}
+      onMouseLeave={() => onHover(null)}
+    >
       <div className="card-header">
         <span className="materia-num">{materia.id}</span>
-        <span className="materia-nombre">{materia.nombre}</span>
+        <span className="materia-nombre">
+          {materia.nombre}
+          {isPrereq && <span className="tree-pill tree-pill-prereq">necesaria</span>}
+          {isDependent && <span className="tree-pill tree-pill-dependent">se desbloquea</span>}
+        </span>
         <div className="card-right">
           <span className="cuatri-badge">{materia.cuatrimestre}</span>
           <span className="estado-badge" style={{ color: estado.color, background: estado.bg }}>

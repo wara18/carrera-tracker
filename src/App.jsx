@@ -1,14 +1,48 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useMaterias } from './hooks/useMaterias'
 import AnioSection from './components/AnioSection'
 import StatsPanel from './components/StatsPanel'
 import { AÑOS, ESTADOS } from './utils/materias'
 import './App.css'
 
+const toArray = (val) => {
+  if (val === null || val === undefined || val === '') return []
+  if (Array.isArray(val)) return val.map(Number).filter(Boolean)
+  if (typeof val === 'number') return val > 0 ? [val] : []
+  if (typeof val === 'string') return val.split(',').map(s => Number(s.trim())).filter(Boolean)
+  return []
+}
+
 export default function App() {
   const { materias, loading, saving, error, stats, updateMateria, refresh, lastSync } = useMaterias()
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [busqueda, setBusqueda] = useState('')
+  const [hoveredId, setHoveredId] = useState(null)
+
+  // Compute which IDs to highlight green (dependents), red (prerequisites), and which to dim
+  const { prereqs, dependents } = useMemo(() => {
+    if (hoveredId === null) return { prereqs: new Set(), dependents: new Set() }
+
+    const hovered = materias.find(m => m.id === hoveredId)
+    if (!hovered) return { prereqs: new Set(), dependents: new Set() }
+
+    // Prerequisites: what the hovered materia needs (correlativas_cursar + correlativas_rendir)
+    const corrCursar = toArray(hovered.correlativas_cursar)
+    const corrRendir = toArray(hovered.correlativas_rendir)
+    const prereqSet = new Set([...corrCursar, ...corrRendir])
+
+    // Dependents: materias that have hoveredId in their correlativas
+    const dependentSet = new Set()
+    for (const m of materias) {
+      const mCursar = toArray(m.correlativas_cursar)
+      const mRendir = toArray(m.correlativas_rendir)
+      if (mCursar.includes(hoveredId) || mRendir.includes(hoveredId)) {
+        dependentSet.add(m.id)
+      }
+    }
+
+    return { prereqs: prereqSet, dependents: dependentSet }
+  }, [hoveredId, materias])
 
   const materiasFiltradas = materias.filter(m => {
     const matchEstado = filtroEstado === 'todos' || m.estado === filtroEstado
@@ -74,6 +108,10 @@ export default function App() {
                   materias={busqueda || filtroEstado !== 'todos' ? del_anio : all_anio}
                   onUpdate={updateMateria}
                   allMaterias={materias}
+                  hoveredId={hoveredId}
+                  prereqs={prereqs}
+                  dependents={dependents}
+                  onHover={setHoveredId}
                 />
               )
             })
