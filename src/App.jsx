@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useMaterias } from './hooks/useMaterias'
 import AnioSection from './components/AnioSection'
 import StatsPanel from './components/StatsPanel'
+import StudentProfile from './components/StudentProfile'
 import { AÑOS, ESTADOS } from './utils/materias'
 import './App.css'
 
@@ -127,6 +128,8 @@ export default function App() {
           />
         </aside>
       </main>
+
+      <StudentProfile />
     </div>
   )
 }
