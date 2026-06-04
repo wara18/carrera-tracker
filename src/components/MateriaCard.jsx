@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { ESTADOS } from '../utils/materias'
 
-// Una materia cumple como correlativa para cursar si está cursada o aprobada
 const puedeUsarParaCursar = (m) => m && (m.estado === 'cursada' || m.estado === 'aprobada')
-// Para rendir necesita estar aprobada
 const puedeUsarParaRendir = (m) => m && m.estado === 'aprobada'
+
+// Normaliza correlativas: acepta array, string "1,2,3" o vacío
+const toArray = (val) => {
+  if (!val && val !== 0) return []
+  if (Array.isArray(val)) return val.map(Number).filter(Boolean)
+  if (typeof val === 'string') return val.split(',').map(s => Number(s.trim())).filter(Boolean)
+  return []
+}
 
 function CorrelativaTag({ id, allMaterias, tipo }) {
   const m = allMaterias.find(x => x.id === id)
@@ -26,12 +32,15 @@ export default function MateriaCard({ materia, onUpdate, allMaterias }) {
 
   const estado = ESTADOS[form.estado] || ESTADOS.falta_cursar
 
-  // Verificar si cumple correlativas para el estado que está eligiendo
-  const puedeCursar = materia.correlativas_cursar.every(id => puedeUsarParaCursar(allMaterias.find(x => x.id === id)))
-  const puedeRendir = materia.correlativas_rendir.every(id => puedeUsarParaRendir(allMaterias.find(x => x.id === id)))
+  // Normalizar siempre a array (datos pueden venir como string desde Sheets)
+  const corrCursar = toArray(materia.correlativas_cursar)
+  const corrRendir = toArray(materia.correlativas_rendir)
 
-  const faltanParaCursar = materia.correlativas_cursar.filter(id => !puedeUsarParaCursar(allMaterias.find(x => x.id === id)))
-  const faltanParaRendir = materia.correlativas_rendir.filter(id => !puedeUsarParaRendir(allMaterias.find(x => x.id === id)))
+  const puedeCursar = corrCursar.every(id => puedeUsarParaCursar(allMaterias.find(x => x.id === id)))
+  const puedeRendir = corrRendir.every(id => puedeUsarParaRendir(allMaterias.find(x => x.id === id)))
+
+  const faltanParaCursar = corrCursar.filter(id => !puedeUsarParaCursar(allMaterias.find(x => x.id === id)))
+  const faltanParaRendir = corrRendir.filter(id => !puedeUsarParaRendir(allMaterias.find(x => x.id === id)))
 
   const showWarningCursar = (form.estado === 'cursada' || form.estado === 'aprobada' || form.estado === 'libre') && !puedeCursar
   const showWarningRendir = form.estado === 'aprobada' && !puedeRendir
@@ -102,7 +111,6 @@ export default function MateriaCard({ materia, onUpdate, allMaterias }) {
             />
           </div>
 
-          {/* Warnings */}
           {showWarningCursar && (
             <div className="corr-warning">
               ⚠ Falta regularizar para poder cursar:
@@ -120,20 +128,19 @@ export default function MateriaCard({ materia, onUpdate, allMaterias }) {
             </div>
           )}
 
-          {/* Correlativas completas */}
-          {materia.correlativas_cursar.length > 0 && (
+          {corrCursar.length > 0 && (
             <div className="corr-section">
               <span className="corr-label">Para cursar</span>
               <div className="corr-tags">
-                {materia.correlativas_cursar.map(id => <CorrelativaTag key={id} id={id} allMaterias={allMaterias} tipo="cursar" />)}
+                {corrCursar.map(id => <CorrelativaTag key={id} id={id} allMaterias={allMaterias} tipo="cursar" />)}
               </div>
             </div>
           )}
-          {materia.correlativas_rendir.length > 0 && (
+          {corrRendir.length > 0 && (
             <div className="corr-section">
               <span className="corr-label">Para rendir</span>
               <div className="corr-tags">
-                {materia.correlativas_rendir.map(id => <CorrelativaTag key={id} id={id} allMaterias={allMaterias} tipo="rendir" />)}
+                {corrRendir.map(id => <CorrelativaTag key={id} id={id} allMaterias={allMaterias} tipo="rendir" />)}
               </div>
             </div>
           )}
