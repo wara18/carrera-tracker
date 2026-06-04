@@ -1,6 +1,21 @@
 import { useState } from 'react'
 import { ESTADOS } from '../utils/materias'
 
+// Una materia cumple como correlativa para cursar si está cursada o aprobada
+const puedeUsarParaCursar = (m) => m && (m.estado === 'cursada' || m.estado === 'aprobada')
+// Para rendir necesita estar aprobada
+const puedeUsarParaRendir = (m) => m && m.estado === 'aprobada'
+
+function CorrelativaTag({ id, allMaterias, tipo }) {
+  const m = allMaterias.find(x => x.id === id)
+  const cumple = tipo === 'cursar' ? puedeUsarParaCursar(m) : puedeUsarParaRendir(m)
+  return (
+    <span className={`corr-tag ${cumple ? 'corr-ok' : 'corr-falta'}`} title={m?.nombre}>
+      {cumple ? '✓' : '✗'} {id}. {m?.nombre ?? id}
+    </span>
+  )
+}
+
 export default function MateriaCard({ materia, onUpdate, allMaterias }) {
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
@@ -10,6 +25,16 @@ export default function MateriaCard({ materia, onUpdate, allMaterias }) {
   })
 
   const estado = ESTADOS[form.estado] || ESTADOS.falta_cursar
+
+  // Verificar si cumple correlativas para el estado que está eligiendo
+  const puedeCursar = materia.correlativas_cursar.every(id => puedeUsarParaCursar(allMaterias.find(x => x.id === id)))
+  const puedeRendir = materia.correlativas_rendir.every(id => puedeUsarParaRendir(allMaterias.find(x => x.id === id)))
+
+  const faltanParaCursar = materia.correlativas_cursar.filter(id => !puedeUsarParaCursar(allMaterias.find(x => x.id === id)))
+  const faltanParaRendir = materia.correlativas_rendir.filter(id => !puedeUsarParaRendir(allMaterias.find(x => x.id === id)))
+
+  const showWarningCursar = (form.estado === 'cursada' || form.estado === 'aprobada' || form.estado === 'libre') && !puedeCursar
+  const showWarningRendir = form.estado === 'aprobada' && !puedeRendir
 
   const handleSave = () => {
     onUpdate(materia.id, form)
@@ -23,11 +48,6 @@ export default function MateriaCard({ materia, onUpdate, allMaterias }) {
       nota_final: materia.nota_final ?? '',
     })
     setEditing(false)
-  }
-
-  const getNombreById = (id) => {
-    const m = allMaterias.find(x => x.id === id)
-    return m ? `${id}. ${m.nombre}` : `${id}`
   }
 
   return (
@@ -81,18 +101,43 @@ export default function MateriaCard({ materia, onUpdate, allMaterias }) {
               placeholder="—"
             />
           </div>
+
+          {/* Warnings */}
+          {showWarningCursar && (
+            <div className="corr-warning">
+              ⚠ Falta regularizar para poder cursar:
+              <div className="corr-tags">
+                {faltanParaCursar.map(id => <CorrelativaTag key={id} id={id} allMaterias={allMaterias} tipo="cursar" />)}
+              </div>
+            </div>
+          )}
+          {showWarningRendir && (
+            <div className="corr-warning">
+              ⚠ Falta aprobar para poder rendir:
+              <div className="corr-tags">
+                {faltanParaRendir.map(id => <CorrelativaTag key={id} id={id} allMaterias={allMaterias} tipo="rendir" />)}
+              </div>
+            </div>
+          )}
+
+          {/* Correlativas completas */}
           {materia.correlativas_cursar.length > 0 && (
-            <div className="correlativas">
-              <span className="corr-label">Para cursar:</span>
-              <span>{materia.correlativas_cursar.map(getNombreById).join(', ')}</span>
+            <div className="corr-section">
+              <span className="corr-label">Para cursar</span>
+              <div className="corr-tags">
+                {materia.correlativas_cursar.map(id => <CorrelativaTag key={id} id={id} allMaterias={allMaterias} tipo="cursar" />)}
+              </div>
             </div>
           )}
           {materia.correlativas_rendir.length > 0 && (
-            <div className="correlativas">
-              <span className="corr-label">Para rendir:</span>
-              <span>{materia.correlativas_rendir.map(getNombreById).join(', ')}</span>
+            <div className="corr-section">
+              <span className="corr-label">Para rendir</span>
+              <div className="corr-tags">
+                {materia.correlativas_rendir.map(id => <CorrelativaTag key={id} id={id} allMaterias={allMaterias} tipo="rendir" />)}
+              </div>
             </div>
           )}
+
           <div className="edit-actions">
             <button className="btn-save" onClick={handleSave}>Guardar</button>
             <button className="btn-cancel" onClick={handleCancel}>Cancelar</button>

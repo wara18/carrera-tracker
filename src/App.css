@@ -338,18 +338,55 @@ h1 {
   border-color: var(--border-strong);
 }
 
-.correlativas {
-  font-size: 11px;
-  color: var(--text-muted);
+.corr-section {
   display: flex;
-  gap: 6px;
-  line-height: 1.5;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .corr-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
   color: var(--text-muted);
-  font-weight: 500;
-  white-space: nowrap;
+}
+
+.corr-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.corr-tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid;
+  line-height: 1.5;
+}
+
+.corr-tag.corr-ok {
+  color: var(--aprobada);
+  background: var(--aprobada-bg);
+  border-color: var(--aprobada);
+}
+
+.corr-tag.corr-falta {
+  color: #9b1c1c;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.corr-warning {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #92400e;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .edit-actions {
