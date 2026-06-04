@@ -4,7 +4,7 @@ import { ESTADOS } from '../utils/materias'
 
 const ORDINAL = ['', 'Primer', 'Segundo', 'Tercer', 'Cuarto', 'Quinto']
 
-export default function AnioSection({ anio, materias, onUpdate, allMaterias, hoveredId, prereqs, dependents, onHover }) {
+export default function AnioSection({ anio, materias, onUpdate, allMaterias, hoveredId, prereqs, dependents, onHover, readOnly }) {
   const [collapsed, setCollapsed] = useState(true)
 
   const aprobadas = materias.filter(m => m.estado === 'aprobada').length
@@ -52,6 +52,7 @@ export default function AnioSection({ anio, materias, onUpdate, allMaterias, hov
                     isDependent={dependents.has(m.id)}
                     isDimmed={hoveredId !== null && hoveredId !== m.id && !prereqs.has(m.id) && !dependents.has(m.id)}
                     onHover={onHover}
+                    readOnly={readOnly}
                   />
                 ))}
               </div>

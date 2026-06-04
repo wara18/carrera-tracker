@@ -32,6 +32,7 @@ export default function MateriaCard({
   isDependent,
   isDimmed,
   onHover,
+  readOnly,
 }) {
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
@@ -94,9 +95,11 @@ export default function MateriaCard({
           <span className="estado-badge" style={{ color: estado.color, background: estado.bg }}>
             {estado.label}
           </span>
-          <button className="edit-btn" onClick={() => setEditing(!editing)} title="Editar">
-            {editing ? '✕' : '✎'}
-          </button>
+          {!readOnly && (
+            <button className="edit-btn" onClick={() => setEditing(!editing)} title="Editar">
+              {editing ? '✕' : '✎'}
+            </button>
+          )}
         </div>
       </div>
 
