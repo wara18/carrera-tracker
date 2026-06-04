@@ -4,10 +4,11 @@ import { ESTADOS } from '../utils/materias'
 const puedeUsarParaCursar = (m) => m && (m.estado === 'cursada' || m.estado === 'aprobada')
 const puedeUsarParaRendir = (m) => m && m.estado === 'aprobada'
 
-// Normaliza correlativas: acepta array, string "1,2,3" o vacío
+// Normaliza correlativas: acepta array, número suelto (Sheets), string "1,2,3" o vacío
 const toArray = (val) => {
-  if (!val && val !== 0) return []
+  if (val === null || val === undefined || val === '') return []
   if (Array.isArray(val)) return val.map(Number).filter(Boolean)
+  if (typeof val === 'number') return val > 0 ? [val] : []
   if (typeof val === 'string') return val.split(',').map(s => Number(s.trim())).filter(Boolean)
   return []
 }
