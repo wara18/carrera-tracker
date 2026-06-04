@@ -4,11 +4,12 @@ import { MATERIAS_DEFAULT } from '../utils/materias'
 const SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL
 
 // Solo tomar estado y notas de Sheets — el resto siempre del default local
+// Si Sheets no tiene dato para esta materia, usa los valores del default (materias.js)
 const mergeWithRemote = (def, remote) => ({
   ...def,
-  estado:       remote?.estado       || 'falta_cursar',
-  nota_cursada: remote?.nota_cursada ?? '',
-  nota_final:   remote?.nota_final   ?? '',
+  estado:       remote?.estado       || def.estado       || 'falta_cursar',
+  nota_cursada: remote?.nota_cursada ?? def.nota_cursada ?? '',
+  nota_final:   remote?.nota_final   ?? def.nota_final   ?? '',
 })
 
 export function useMaterias() {
