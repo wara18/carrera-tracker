@@ -3,6 +3,14 @@ import { MATERIAS_DEFAULT } from '../utils/materias'
 
 const SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL
 
+// Solo tomar estado y notas de Sheets — el resto siempre del default local
+const mergeWithRemote = (def, remote) => ({
+  ...def,
+  estado:       remote?.estado       || 'falta_cursar',
+  nota_cursada: remote?.nota_cursada ?? '',
+  nota_final:   remote?.nota_final   ?? '',
+})
+
 export function useMaterias() {
   const [materias, setMaterias] = useState([])
   const [loading, setLoading] = useState(true)
@@ -12,14 +20,7 @@ export function useMaterias() {
 
   const fetchMaterias = useCallback(async () => {
     if (!SCRIPT_URL) {
-      // Sin URL configurada, usamos datos default con estado vacío
-      const withEstado = MATERIAS_DEFAULT.map(m => ({
-        ...m,
-        estado: 'falta_cursar',
-        nota_cursada: '',
-        nota_final: '',
-      }))
-      setMaterias(withEstado)
+      setMaterias(MATERIAS_DEFAULT.map(m => mergeWithRemote(m, null)))
       setLoading(false)
       return
     }
@@ -30,23 +31,15 @@ export function useMaterias() {
       const res = await fetch(`${SCRIPT_URL}?action=getAll`)
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      // Merge con defaults para asegurar que estén todos los campos
       const merged = MATERIAS_DEFAULT.map(def => {
         const remote = data.find(d => Number(d.id) === def.id)
-        return remote ? { ...def, ...remote } : { ...def, estado: 'falta_cursar', nota_cursada: '', nota_final: '' }
+        return mergeWithRemote(def, remote)
       })
       setMaterias(merged)
       setLastSync(new Date())
     } catch (e) {
       setError(e.message)
-      // Fallback a defaults
-      const withEstado = MATERIAS_DEFAULT.map(m => ({
-        ...m,
-        estado: 'falta_cursar',
-        nota_cursada: '',
-        nota_final: '',
-      }))
-      setMaterias(withEstado)
+      setMaterias(MATERIAS_DEFAULT.map(m => mergeWithRemote(m, null)))
     } finally {
       setLoading(false)
     }
@@ -57,7 +50,6 @@ export function useMaterias() {
   }, [fetchMaterias])
 
   const updateMateria = useCallback(async (id, fields) => {
-    // Optimistic update
     setMaterias(prev =>
       prev.map(m => (m.id === id ? { ...m, ...fields } : m))
     )
@@ -84,9 +76,9 @@ export function useMaterias() {
   const stats = {
     total: materias.length,
     aprobadas: materias.filter(m => m.estado === 'aprobada').length,
-    cursadas: materias.filter(m => m.estado === 'cursada').length,
-    libres: materias.filter(m => m.estado === 'libre').length,
-    falta: materias.filter(m => m.estado === 'falta_cursar').length,
+    cursadas:  materias.filter(m => m.estado === 'cursada').length,
+    libres:    materias.filter(m => m.estado === 'libre').length,
+    falta:     materias.filter(m => m.estado === 'falta_cursar').length,
     promedio: (() => {
       const notas = materias
         .filter(m => m.estado === 'aprobada' && m.nota_final !== '' && !isNaN(Number(m.nota_final)))
